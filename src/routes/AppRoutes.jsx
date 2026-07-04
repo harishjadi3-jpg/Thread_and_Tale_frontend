@@ -21,18 +21,17 @@ import Addresses from "../pages/Addresses";
 import AdminDashboard from "../pages/AdminDashboard";
 import CategoryProducts from "../pages/CategoryProducts";
 import AddProduct from "../pages/AddProduct";
-
 const ProtectedRoute = ({ children }) => {
 
-    const user =
-        JSON.parse(
-            localStorage.getItem("user")
-        );
+    const token =
+        localStorage.getItem("accessToken");
+
 
     const location =
         useLocation();
 
-    return user ? (
+
+    return token ? (
         children
     ) : (
         <Navigate
@@ -43,6 +42,7 @@ const ProtectedRoute = ({ children }) => {
             replace
         />
     );
+
 };
 
 const AdminRoute = ({ children }) => {
