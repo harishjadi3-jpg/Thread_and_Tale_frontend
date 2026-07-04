@@ -148,137 +148,347 @@ async () => {
 
 };
 
-    const handleBuyNow =
-        async () => {
+    const handleBuyNow = async () => {
 
-            try {
-                console.log("Buy Now clicked",user.user);
-                const temp=user.user;
-                console.log("This is temp", temp);
 
-                const amount =
-                    product.details?.[0]?.price;
+try {
 
-                const response =
-                    await createRazorpayOrder(
-                        amount
-                    );
 
-                const order =
-                    response.data.data;
-                console.log("key ", import.meta.env.VITE_RAZORPAY_KEY);
+console.log(
+"Online payment started"
+);
 
-                const options = {
 
-                    key:
 
-                        import.meta.env
-                            .VITE_RAZORPAY_KEY,
+const temp =
+user?.user;
 
-                    amount:
-                        order.amount,
 
-                    currency:
-                        order.currency,
+const amount =
+product.details?.[0]?.price;
 
-                    name:
-                        "Harish",
 
-                    description:
-                        product.name,
 
-                    image:
-                        product.images?.[0],
 
-                    order_id:
-                        order.id,
+// STEP 1: CREATE RAZORPAY ORDER
 
-                    handler:
-                        async function (response) {
+const response =
+await createRazorpayOrder(
+    amount
+);
 
-                            try {
 
-                                const verifyRes =
-                                    await verifyPayment({
 
-                                        razorpay_order_id:
-                                            response.razorpay_order_id,
+const razorpayOrder =
+response.data.data;
 
-                                        razorpay_payment_id:
-                                            response.razorpay_payment_id,
 
-                                        razorpay_signature:
-                                            response.razorpay_signature
 
-                                    });
+console.log(
+"Razorpay Order:",
+razorpayOrder
+);
 
-                                console.log(
-                                    verifyRes.data
-                                );
 
-                                toast.success("Order Placed Successfully");
 
-setTimeout(() => {
-    navigate("/orders");
-}, 1500);
 
-                            }
-                            catch (error) {
 
-                                console.log(error);
 
-                                toast.error(
-                                    "Payment Verification Failed"
-                                );
+const options = {
 
-                            }
 
-                        },
+key:
+import.meta.env.VITE_RAZORPAY_KEY,
 
-                    prefill: {
-                        
 
-    name:
-        temp?.username || "Customer",
 
-    email:
-        temp?.email || "",
+amount:
+razorpayOrder.amount,
 
-    contact:
-        temp?.phoneNumber || ""
+
+
+currency:
+razorpayOrder.currency,
+
+
+
+name:
+"Thread & Tale",
+
+
+
+description:
+product.name,
+
+
+
+image:
+product.images?.[0],
+
+
+
+order_id:
+razorpayOrder.id,
+
+
+
+
+
+// STEP 2: PAYMENT SUCCESS
+
+handler:
+async function(response){
+
+
+try {
+
+
+
+console.log(
+"Payment Response:",
+response
+);
+
+
+
+
+
+// STEP 3: VERIFY PAYMENT
+
+
+const verifyRes =
+await verifyPayment({
+
+
+razorpay_order_id:
+response.razorpay_order_id,
+
+
+
+razorpay_payment_id:
+response.razorpay_payment_id,
+
+
+
+razorpay_signature:
+response.razorpay_signature
+
+
+});
+
+
+
+
+console.log(
+"Payment Verified:",
+verifyRes.data
+);
+
+
+
+
+
+
+// STEP 4: CREATE ORDER IN DATABASE
+
+
+const orderData = {
+
+
+productId:
+product._id,
+
+
+
+paymentType:
+"ONLINE",
+
+
+
+orderCount:
+1,
+
+
+
+color:
+product.details?.[0]?.color,
+
+
+
+size:
+product.details?.[0]?.size,
+
+
+
+paymentId:
+response.razorpay_payment_id
+
+
+
+};
+
+
+
+
+console.log(
+"Creating order:",
+orderData
+);
+
+
+
+
+
+const orderResponse =
+await orderProduct(
+orderData
+);
+
+
+
+
+console.log(
+"MongoDB Order:",
+orderResponse.data
+);
+
+
+
+
+
+
+toast.success(
+"Order Placed Successfully"
+);
+
+
+
+
+setTimeout(()=>{
+
+
+navigate(
+"/orders"
+);
+
+
+},1500);
+
+
+
+
+}
+
+catch(error){
+
+
+
+console.log(
+"Order Error:",
+error
+);
+
+
+
+toast.error(
+"Payment done but order creation failed"
+);
+
+
+
+}
+
 
 },
 
 
-                    theme: {
-
-                        color: "#16a34a"
-
-                    }
-
-                };
-                
-
-                const razorpay =
-                    new window.Razorpay(
-                        options
-                    );
-
-                razorpay.open();
 
 
-            }
-            catch (error) {
 
-                console.log(error);
 
-                toast.error(
-                    "Payment Failed"
-                );
+// USER DETAILS IN PAYMENT WINDOW
 
-            }
 
-        };
+prefill:{
+
+
+name:
+temp?.username ||
+"Customer",
+
+
+
+email:
+temp?.email ||
+"",
+
+
+
+contact:
+temp?.phoneNumber ||
+""
+
+
+},
+
+
+
+
+
+
+theme:{
+
+color:"#16a34a"
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+// STEP 5: OPEN RAZORPAY
+
+
+const razorpay =
+new window.Razorpay(
+options
+);
+
+
+
+razorpay.open();
+
+
+
+
+}
+
+catch(error){
+
+
+console.log(
+"Payment Error:",
+error
+);
+
+
+
+toast.error(
+"Payment Failed"
+);
+
+
+
+}
+
+
+};
 
     const { id } =
         useParams();

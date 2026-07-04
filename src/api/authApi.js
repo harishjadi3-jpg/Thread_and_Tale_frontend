@@ -48,5 +48,5 @@ export const logoutUser = ()=>{
 
 export const getCurrentUser = ()=>{
 
-    return API.get("/getuser");
+    return API.get("/profile");
 };

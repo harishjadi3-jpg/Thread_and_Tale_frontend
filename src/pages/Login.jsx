@@ -2,35 +2,38 @@
 
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, Shirt } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { Eye, EyeOff, ArrowRight, Scissors } from "lucide-react";
 import toast from "react-hot-toast";
-import API from "../api/axios";
+import { loginEmail } from "../redux/slices/authSlice";
 
 const Login = () => {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
+  // ===============================
+  // LOGIN USING REDUX
+  // ===============================
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await API.post("/logginwithemail", formData);
-      localStorage.setItem("user", JSON.stringify(response.data.data));
+      const user = await dispatch(loginEmail(formData)).unwrap();
+      console.log("LOGIN SUCCESS:", user);
       toast.success("Login Successful");
-      setTimeout(() => {
-        navigate(from, { replace: true });
-        window.location.reload();
-      }, 1000);
+      navigate(from, { replace: true });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login Failed");
+      toast.error(error || "Login Failed");
     } finally {
       setLoading(false);
     }
@@ -41,174 +44,159 @@ const Login = () => {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: "#F5F0EB" }}
     >
-      <div className="w-full max-w-4xl flex rounded-3xl overflow-hidden shadow-2xl">
-
-        {/* ── Left panel ── */}
+      <div className="w-full max-w-4xl flex rounded-3xl overflow-hidden shadow-2xl border border-black/5">
+        {/* LEFT PANEL */}
         <div
-          className="hidden lg:flex flex-col justify-between w-[45%] p-10"
+          className="hidden lg:flex flex-col justify-between w-[45%] p-10 relative overflow-hidden"
           style={{ background: "#1C1917" }}
         >
-          {/* Brand */}
-          <div className="flex items-baseline gap-0 select-none">
-            <span
-              className="text-3xl font-black text-[#FAF7F2]"
-              style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.03em" }}
-            >
-              Thread
-            </span>
-            <span
-              className="text-3xl font-black text-[#C9826B]"
-              style={{ fontFamily: "'Georgia', serif" }}
-            >
-              &
-            </span>
-            <span
-              className="text-3xl font-black text-[#FAF7F2]"
-              style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.03em" }}
-            >
-              Tale
-            </span>
+          {/* stitched border along the seam */}
+          <div
+            className="absolute top-0 right-0 h-full w-px"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to bottom, #C9826B 0, #C9826B 6px, transparent 6px, transparent 14px)",
+              opacity: 0.5,
+            }}
+          />
+
+          {/* ambient stitched texture */}
+          <div
+            className="pointer-events-none absolute -right-24 -bottom-24 w-72 h-72 rounded-full"
+            style={{
+              border: "1.5px dashed rgba(201,130,107,0.25)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -right-10 -bottom-10 w-52 h-52 rounded-full"
+            style={{
+              border: "1.5px dashed rgba(201,130,107,0.18)",
+            }}
+          />
+
+          <div className="relative z-10">
+            <span className="text-3xl font-black text-white tracking-tight">Thread</span>
+            <span className="text-3xl font-black text-[#C9826B]">&amp;</span>
+            <span className="text-3xl font-black text-white tracking-tight">Tale</span>
           </div>
 
-          {/* Middle copy */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9826B] mb-3">
-              Welcome back
-            </p>
-            <h2
-              className="text-4xl font-black text-[#FAF7F2] leading-tight mb-4"
-              style={{ fontFamily: "'Georgia', serif" }}
-            >
-              Every stitch<br />has a story.
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="block h-px w-6"
+                style={{ background: "#C9826B" }}
+              />
+              <p className="text-[#C9826B] uppercase tracking-[0.2em] text-xs font-medium">
+                Welcome back
+              </p>
+            </div>
+
+            <h2 className="text-4xl font-black text-white leading-[1.15]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+              Every stitch
+              <br />
+              has a story.
             </h2>
-            <p className="text-stone-400 text-sm leading-relaxed">
-              Sign in to continue your journey — track orders, revisit
-              your wishlist, and discover new arrivals.
-            </p>
-          </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-6">
-            {[
-              { value: "2k+", label: "Styles" },
-              { value: "7-day", label: "Returns" },
-              { value: "₹99", label: "Delivery" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="text-[#C9826B] font-extrabold text-lg">{s.value}</p>
-                <p className="text-stone-500 text-xs">{s.label}</p>
-              </div>
-            ))}
+            <p className="text-stone-400 mt-4 text-sm leading-relaxed max-w-[280px]">
+              Sign in to continue shopping, manage orders and wishlist.
+            </p>
+
+            <div className="flex items-center gap-2 mt-8 text-stone-500">
+              <Scissors size={14} className="text-[#C9826B]" />
+              <span
+                className="block h-px flex-1"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(to right, #57534e 0, #57534e 4px, transparent 4px, transparent 8px)",
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* ── Right panel ── */}
-        <div className="flex-1 bg-white p-8 md:p-12 flex flex-col justify-center">
+        {/* RIGHT PANEL */}
+        <div className="flex-1 bg-white p-10 sm:p-12">
+          <h2 className="text-3xl font-black mb-2 text-stone-900" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            Sign in
+          </h2>
 
-          {/* Mobile brand */}
-          <div className="flex lg:hidden items-baseline gap-0 select-none mb-8 justify-center">
-            <span className="text-2xl font-black text-[#1C1917]" style={{ fontFamily: "'Georgia', serif" }}>Thread</span>
-            <span className="text-2xl font-black text-[#C9826B]" style={{ fontFamily: "'Georgia', serif" }}>&</span>
-            <span className="text-2xl font-black text-[#1C1917]" style={{ fontFamily: "'Georgia', serif" }}>Tale</span>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-[#1C1917] mb-1"
-              style={{ fontFamily: "'Georgia', serif" }}>
-              Sign in
-            </h2>
-            <p className="text-stone-500 text-sm">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-[#C9826B] font-semibold hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </div>
+          <p className="text-sm text-stone-500 mb-8">
+            Don&apos;t have an account?
+            <Link
+              to="/register"
+              className="ml-2 text-[#C9826B] font-medium hover:underline underline-offset-4"
+            >
+              Sign up
+            </Link>
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* Email */}
+            {/* EMAIL */}
             <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-                Email address
+              <label className="block text-xs font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
+                Email
               </label>
               <input
                 type="email"
                 name="email"
-                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 text-sm text-stone-800 placeholder-stone-400 outline-none focus:border-[#C9826B] transition bg-[#FAF7F2]"
+                className="w-full border border-stone-200 p-3 rounded-xl outline-none transition-all focus:border-[#C9826B] focus:ring-4 focus:ring-[#C9826B]/10 placeholder:text-stone-400"
+                placeholder="you@example.com"
               />
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-semibold text-stone-700">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-[#C9826B] hover:underline font-medium"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 text-sm text-stone-800 placeholder-stone-400 outline-none focus:border-[#C9826B] transition bg-[#FAF7F2] pr-12"
+                  placeholder="password"
+                  className="w-full border border-stone-200 p-3 pr-11 rounded-xl outline-none transition-all focus:border-[#C9826B] focus:ring-4 focus:ring-[#C9826B]/10 placeholder:text-stone-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#C9826B] transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              
             </div>
 
-            {/* Submit */}
             <button
-              type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-2"
-              style={{
-                background: loading ? "#a8a29e" : "#1C1917",
-                color: "#FAF7F2",
-              }}
+              className="w-full text-white p-3.5 rounded-xl flex justify-center items-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: "#1C1917" }}
             >
               {loading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in…
+                  <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin cursor-not-allowed" />
+                  Signing in...
                 </>
               ) : (
                 <>
                   Sign in
-                  <ArrowRight size={16} />
+                  <ArrowRight size={18} />
                 </>
               )}
             </button>
-
           </form>
 
-          {/* Footer note */}
-          <p className="text-center text-xs text-stone-400 mt-8">
-            By signing in you agree to our{" "}
-            <span className="underline cursor-pointer hover:text-[#C9826B]">Terms</span>
-            {" & "}
-            <span className="underline cursor-pointer hover:text-[#C9826B]">Privacy Policy</span>
-          </p>
+          
 
+          
         </div>
       </div>
     </div>

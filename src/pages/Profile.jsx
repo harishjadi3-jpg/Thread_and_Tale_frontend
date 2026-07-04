@@ -1,3 +1,5 @@
+// src/pages/Profile.jsx
+
 import {
     FaShoppingBag,
     FaHeart,
@@ -12,12 +14,30 @@ import {
     FaPlus,
     FaVenusMars,
     FaBirthdayCake,
-    FaQuoteLeft
+    FaQuoteLeft,
+    FaChevronRight
 } from "react-icons/fa";
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getCurrentUser } from "../api/userApi";
+import {
+    useEffect,
+    useState
+} from "react";
+
+import {
+    useNavigate
+} from "react-router-dom";
+
+import {
+    getCurrentUser,
+    updateUsername,
+    updatePhoneNumber,
+    updateGender,
+    updateDateOfBirth,
+    updateBio,
+    updateProfileImage
+} from "../api/userApi";
+
+
 
 const Profile = () => {
 
@@ -25,349 +45,461 @@ const Profile = () => {
 
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [editField, setEditField] = useState(null);
+    const [editValue, setEditValue] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [imgUploading, setImgUploading] = useState(false);
+
+    // =====================
+    // FETCH USER
+    // =====================
 
     useEffect(() => {
 
-        const fetchProfile = async () => {
+        const fetchUser = async () => {
+
             try {
 
-                const response = await getCurrentUser();
+                const res = await getCurrentUser();
 
-                console.log(response);
+                setProfile(res.data.data);
 
-                setProfile(response.data);
-
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setLoading(false);
             }
+            catch (error) {
+
+                console.log(error);
+
+            }
+            finally {
+
+                setLoading(false);
+
+            }
+
         };
 
-        fetchProfile();
+        fetchUser();
 
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("user");
-        navigate("/login");
+
+    // =====================
+    // UPDATE DETAILS
+    // =====================
+
+    const handleUpdate = async () => {
+
+        try {
+
+            setSaving(true);
+
+            if (editField === "username") {
+
+                await updateUsername({
+                    username: editValue
+                });
+
+            }
+
+            if (editField === "phoneNumber") {
+
+                await updatePhoneNumber({
+                    phoneNumber: editValue
+                });
+
+            }
+
+            if (editField === "gender") {
+
+                await updateGender({
+                    gender: editValue
+                });
+
+            }
+
+            if (editField === "dateOfBirth") {
+
+                await updateDateOfBirth({
+                    dateOfBirth: editValue
+                });
+
+            }
+
+            if (editField === "bio") {
+
+                await updateBio({
+                    bio: editValue
+                });
+
+            }
+
+            setProfile({
+
+                ...profile,
+
+                [editField]: editValue
+
+            });
+
+            setEditField(null);
+
+        }
+        catch (error) {
+
+            console.log(error);
+
+        }
+        finally {
+
+            setSaving(false);
+
+        }
+
     };
 
+
+    // =====================
+    // IMAGE UPDATE
+    // =====================
+
+    const handleImageChange = async (e) => {
+
+    try {
+
+        setImgUploading(true);
+
+        const file = e.target.files[0];
+
+        console.log("Selected file:", file);
+
+        const form = new FormData();
+
+        form.append(
+            "profileImage",
+            file
+        );
+
+
+        // check FormData values
+        for (let pair of form.entries()) {
+            console.log(pair[0], pair[1]);
+        }
+
+
+        const res = await updateProfileImage(form);
+
+
+        setProfile({
+
+            ...profile,
+
+            profileImage: res.data.data.profileImage
+
+        });
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+    finally{
+
+        setImgUploading(false);
+
+    }
+
+};
+
+
+    // =====================
+    // LOGOUT
+    // =====================
+
+    const handleLogout = () => {
+
+        localStorage.removeItem("accessToken");
+
+        navigate("/login");
+
+    };
+
+
     if (loading) {
+
         return (
-            <div className="h-screen flex items-center justify-center bg-stone-50">
+            <div className="min-h-screen flex items-center justify-center bg-[#faf7f2]">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-orange-500" />
-                    <p className="text-sm font-medium tracking-wide text-stone-400">
-                        Loading your profile...
-                    </p>
+                    <div className="w-10 h-10 rounded-full border-2 border-[#1C1917]/15 border-t-orange-500 animate-spin" />
+                    <p className="text-sm tracking-wide text-gray-400">Loading your profile…</p>
                 </div>
             </div>
         );
+
     }
 
-    // Small presentational helper for personal-info rows.
-    const InfoRow = ({ icon, label, value, onEdit, isLast }) => (
-        <div
-            className={`flex items-center justify-between gap-4 py-4 ${
-                isLast ? "" : "border-b border-stone-100"
-            }`}
-        >
-            <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-500">
+
+    // =====================
+    // INFO ROW
+    // =====================
+
+    const InfoRow = ({
+        icon,
+        label,
+        field,
+        value,
+        editable = true
+    }) => (
+
+        <div className="group flex items-center justify-between gap-4 border-b border-gray-100 py-4 sm:py-5 last:border-b-0">
+
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+
+                <div className="shrink-0 bg-orange-50 text-orange-600 p-3 rounded-full transition-colors group-hover:bg-orange-100">
                     {icon}
-                </span>
+                </div>
+
                 <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wider text-stone-400">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                         {label}
                     </p>
-                    <p className="truncate font-medium text-stone-800">
-                        {value}
+                    <p className={`truncate ${value ? "text-gray-800" : "text-gray-400 italic"}`}>
+                        {value || "Not added"}
                     </p>
                 </div>
+
             </div>
 
-            <button
-                onClick={onEdit}
-                className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-            >
-                <FaPen size={11} />
-                Edit
-            </button>
+            {editable &&
+                <button
+                    onClick={() => {
+                        setEditField(field);
+                        setEditValue(value || "");
+                    }}
+                    className="shrink-0 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-orange-600 px-3 py-1.5 rounded-full hover:bg-orange-50 transition-colors cursor-pointer"
+                >
+                    <FaPen className="text-xs" />
+                    <span className="hidden sm:inline">Edit</span>
+                </button>
+            }
+
         </div>
+
     );
 
-    // Receipt-style stat card.
-    const StatCard = ({ icon, value, label, accent, onClick }) => (
-        <div
+
+    // =====================
+    // QUICK ACTION BUTTON
+    // =====================
+
+    const QuickAction = ({ icon, label, onClick }) => (
+        <button
             onClick={onClick}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:shadow-md"
+            className="w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-left text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors cursor-pointer"
         >
-            <div className="flex items-center justify-between p-5">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${accent.bg} ${accent.text}`}>
-                    {icon}
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-stone-300 transition group-hover:text-stone-500">
-                    View &rarr;
-                </span>
-            </div>
-
-            <div className="relative border-t border-dashed border-stone-200 px-5 py-4">
-                <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-stone-50" />
-                <span className="absolute -right-2.5 -top-2.5 h-5 w-5 rounded-full bg-stone-50" />
-                <p className="text-2xl font-bold text-stone-900">{value}</p>
-                <p className="text-sm text-stone-500">{label}</p>
-            </div>
-        </div>
+            <span className="flex items-center gap-3">
+                <span className="text-orange-500">{icon}</span>
+                <span className="font-medium text-sm">{label}</span>
+            </span>
+            <FaChevronRight className="text-xs text-gray-300 group-hover:text-orange-400" />
+        </button>
     );
+
 
     return (
-        <div className="min-h-screen bg-stone-50 px-4 py-8 md:px-8">
-            <div className="mx-auto max-w-6xl space-y-6">
 
-                {/* Header */}
-                <div className="relative overflow-hidden rounded-3xl bg-stone-900 p-6 text-stone-50 md:p-10">
+        <div className="min-h-screen bg-[#faf7f2] p-4 sm:p-6 lg:p-10">
 
-                    <div className="absolute -top-20 right-0 h-56 w-56 rounded-full bg-orange-500/10" />
-                    <div className="absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-emerald-500/5" />
+            <div className="max-w-7xl mx-auto">
 
-                    <div className="relative flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-left">
+                {/* HEADER */}
 
-                        <div className="relative flex-shrink-0">
-                            <img
-                                src={profile?.profileImage}
-                                alt="profile"
-                                className="h-28 w-28 rounded-full border-4 border-stone-800 object-cover ring-2 ring-stone-50/10 md:h-32 md:w-32"
+                <div className="relative overflow-hidden bg-[#1C1917] text-white rounded-3xl p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 text-center sm:text-left">
+
+                    <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl" />
+
+                    <div className="relative shrink-0">
+
+                        <img
+                            src={profile?.profileImage || "/default-avatar.png"}
+                            alt="Profile"
+                            className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white/10 shadow-lg"
+                        />
+
+                        <label className="absolute bottom-0 right-0 bg-orange-500 hover:bg-orange-600 transition-colors p-3 rounded-full cursor-pointer shadow-md">
+
+                            {imgUploading
+                                ? <span className="block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                : <FaCamera className="text-sm" />
+                            }
+
+                            <input
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={handleImageChange}
                             />
 
-                            <button
-                                onClick={() => navigate("/updateprofileimage")}
-                                className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 text-stone-50 shadow-lg transition hover:bg-orange-600"
-                            >
-                                <FaCamera size={14} />
-                            </button>
-                        </div>
-
-                        <div className="flex-1">
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400">
-                                Account
-                            </p>
-                            <h1 className="mt-1 font-serif text-3xl font-semibold md:text-4xl">
-                                {profile?.username}
-                            </h1>
-                            <p className="mt-2 flex items-center justify-center gap-2 text-sm text-stone-300 md:justify-start">
-                                <FaEnvelope size={12} />
-                                {profile?.email}
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 rounded-full border border-stone-700 px-5 py-2.5 text-sm font-semibold text-stone-200 transition hover:border-orange-500 hover:text-orange-400"
-                        >
-                            <FaSignOutAlt />
-                            Log out
-                        </button>
+                        </label>
 
                     </div>
+
+                    <div className="relative flex-1 min-w-0">
+
+                        <p className="text-orange-400 tracking-[0.2em] text-xs font-semibold">
+                            ACCOUNT
+                        </p>
+
+                        <h1 className="text-3xl sm:text-4xl font-bold truncate">
+                            {profile?.username}
+                        </h1>
+
+                        <p className="flex items-center justify-center sm:justify-start gap-2 mt-2 text-white/70 text-sm">
+                            <FaEnvelope />
+                            <span className="truncate">{profile?.email}</span>
+                        </p>
+
+                    </div>
+
+                    <button
+                        onClick={handleLogout}
+                        className="relative shrink-0 flex items-center gap-2 border border-white/20 hover:bg-white hover:text-[#1C1917] px-5 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer"
+                    >
+                        <FaSignOutAlt />
+                        Logout
+                    </button>
+
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 
-                    <StatCard
-                        icon={<FaShoppingBag size={18} />}
-                        value={profile?.statistics?.totalOrders || 0}
-                        label="Orders"
-                        accent={{ bg: "bg-orange-50", text: "text-orange-600" }}
+                {/* CARDS */}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 my-6 sm:my-8">
+
+                    <button
                         onClick={() => navigate("/orders")}
-                    />
+                        className="group bg-white p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-md border border-transparent hover:border-orange-100 transition-all cursor-pointer flex flex-col items-start gap-3"
+                    >
+                        <span className="bg-orange-50 text-orange-600 p-3 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                            <FaShoppingBag />
+                        </span>
+                        <h2 className="font-semibold text-gray-800">Orders</h2>
+                    </button>
 
-                    <StatCard
-                        icon={<FaHeart size={18} />}
-                        value={profile?.statistics?.totalWishlistItems || 0}
-                        label="Wishlist"
-                        accent={{ bg: "bg-rose-50", text: "text-rose-600" }}
+                    <button
                         onClick={() => navigate("/wishlist")}
-                    />
+                        className="group bg-white p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-md border border-transparent hover:border-orange-100 transition-all cursor-pointer flex flex-col items-start gap-3"
+                    >
+                        <span className="bg-orange-50 text-orange-600 p-3 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                            <FaHeart />
+                        </span>
+                        <h2 className="font-semibold text-gray-800">Wishlist</h2>
+                    </button>
 
-                    <StatCard
-                        icon={<FaShoppingCart size={18} />}
-                        value={profile?.statistics?.cartItems || 0}
-                        label="Cart"
-                        accent={{ bg: "bg-emerald-50", text: "text-emerald-600" }}
+                    <button
                         onClick={() => navigate("/cart")}
-                    />
+                        className="group bg-white p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-md border border-transparent hover:border-orange-100 transition-all cursor-pointer flex flex-col items-start gap-3"
+                    >
+                        <span className="bg-orange-50 text-orange-600 p-3 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                            <FaShoppingCart />
+                        </span>
+                        <h2 className="font-semibold text-gray-800">Cart</h2>
+                    </button>
 
                 </div>
 
-                {/* Main content */}
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-                    <div className="space-y-6 lg:col-span-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
 
-                        {/* Personal Information */}
-                        <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200">
+                    {/* INFORMATION */}
 
-                            <h2 className="mb-2 font-serif text-xl font-semibold text-stone-900">
-                                Personal Information
-                            </h2>
+                    <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 shadow-sm">
 
-                            <div className="divide-y divide-stone-100">
+                        <h2 className="text-xl font-bold mb-2 text-gray-900">
+                            Personal Information
+                        </h2>
+                        <p className="text-sm text-gray-400 mb-4">
+                            Keep your details up to date.
+                        </p>
 
-                                <InfoRow
-                                    icon={<FaUser size={14} />}
-                                    label="Username"
-                                    value={profile?.username}
-                                    onEdit={() => navigate("/updateusername")}
-                                />
+                        <InfoRow
+                            icon={<FaUser />}
+                            label="Username"
+                            field="username"
+                            value={profile?.username}
+                        />
 
-                                <InfoRow
-                                    icon={<FaEnvelope size={14} />}
-                                    label="Email"
-                                    value={profile?.email}
-                                    onEdit={() => navigate("/updateemail")}
-                                />
+                        <InfoRow
+                            icon={<FaEnvelope />}
+                            label="Email"
+                            value={profile?.email}
+                            editable={false}
+                        />
 
-                                <InfoRow
-                                    icon={<FaPhone size={14} />}
-                                    label="Phone Number"
-                                    value={profile?.phoneNumber || "Not added"}
-                                    onEdit={() => navigate("/updatephonenumber")}
-                                />
+                        <InfoRow
+                            icon={<FaPhone />}
+                            label="Phone"
+                            field="phoneNumber"
+                            value={profile?.phoneNumber}
+                        />
 
-                                <InfoRow
-                                    icon={<FaVenusMars size={14} />}
-                                    label="Gender"
-                                    value={profile?.gender || "Not added"}
-                                    onEdit={() => navigate("/updategender")}
-                                />
+                        <InfoRow
+                            icon={<FaVenusMars />}
+                            label="Gender"
+                            field="gender"
+                            value={profile?.gender}
+                        />
 
-                                <InfoRow
-                                    icon={<FaBirthdayCake size={14} />}
-                                    label="Date of Birth"
-                                    value={profile?.dateOfBirth?.split("T")[0] || "Not added"}
-                                    onEdit={() => navigate("/updatedateofbirth")}
-                                />
+                        <InfoRow
+                            icon={<FaBirthdayCake />}
+                            label="Date Of Birth"
+                            field="dateOfBirth"
+                            value={profile?.dateOfBirth}
+                        />
 
-                                <InfoRow
-                                    icon={<FaQuoteLeft size={14} />}
-                                    label="Bio"
-                                    value={profile?.bio || "No bio added"}
-                                    onEdit={() => navigate("/updatebio")}
-                                    isLast
-                                />
-
-                            </div>
-
-                        </div>
-
-                        {/* Address */}
-                        <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200">
-
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-stone-900">
-                                    <FaMapMarkerAlt className="text-orange-500" />
-                                    Address
-                                </h2>
-
-                                {profile?.primaryAddress && (
-                                    <button
-                                        onClick={() => navigate("/addresses")}
-                                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-                                    >
-                                        <FaPen size={11} />
-                                        Manage
-                                    </button>
-                                )}
-                            </div>
-
-                            {profile?.primaryAddress ? (
-                                <div className="rounded-xl bg-stone-50 p-4 leading-relaxed text-stone-700">
-                                    <p className="font-medium text-stone-900">
-                                        {profile.primaryAddress.addressLine}
-                                    </p>
-                                    <p>{profile.primaryAddress.village}</p>
-                                    <p>{profile.primaryAddress.mandal}</p>
-                                    <p>
-                                        {profile.primaryAddress.dist}, {profile.primaryAddress.state}
-                                    </p>
-                                    <p>{profile.primaryAddress.pinCode}</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-stone-200 py-8 text-center">
-                                    <p className="text-stone-400">
-                                        You haven't added an address yet
-                                    </p>
-                                    <button
-                                        onClick={() => navigate("/addaddress")}
-                                        className="flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-stone-50 transition hover:bg-orange-600"
-                                    >
-                                        <FaPlus size={12} />
-                                        Add Address
-                                    </button>
-                                </div>
-                            )}
-
-                        </div>
+                        <InfoRow
+                            icon={<FaQuoteLeft />}
+                            label="Bio"
+                            field="bio"
+                            value={profile?.bio}
+                        />
 
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200">
 
-                        <h2 className="mb-4 font-serif text-xl font-semibold text-stone-900">
+                    {/* QUICK ACTIONS */}
+
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm h-fit">
+
+                        <h2 className="font-bold text-xl text-gray-900 mb-4">
                             Quick Actions
                         </h2>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-col gap-1">
 
-                            <button
+                            <QuickAction
+                                icon={<FaShoppingBag />}
+                                label="My Orders"
                                 onClick={() => navigate("/orders")}
-                                className="flex w-full items-center gap-3 rounded-xl p-4 text-left font-medium text-stone-700 transition hover:bg-orange-50 hover:text-orange-700"
-                            >
-                                <FaShoppingBag />
-                                My Orders
-                            </button>
+                            />
 
-                            <button
+                            <QuickAction
+                                icon={<FaHeart />}
+                                label="Wishlist"
                                 onClick={() => navigate("/wishlist")}
-                                className="flex w-full items-center gap-3 rounded-xl p-4 text-left font-medium text-stone-700 transition hover:bg-rose-50 hover:text-rose-700"
-                            >
-                                <FaHeart />
-                                Wishlist
-                            </button>
+                            />
 
-                            <button
-                                onClick={() => navigate("/cart")}
-                                className="flex w-full items-center gap-3 rounded-xl p-4 text-left font-medium text-stone-700 transition hover:bg-emerald-50 hover:text-emerald-700"
-                            >
-                                <FaShoppingCart />
-                                Cart
-                            </button>
+                            <QuickAction
+                                icon={<FaMapMarkerAlt />}
+                                label="Addresses"
+                                onClick={() => navigate("/profile/addresses")}
+                            />
 
-                            <button
-                                onClick={() => navigate("/addresses")}
-                                className="flex w-full items-center gap-3 rounded-xl p-4 text-left font-medium text-stone-700 transition hover:bg-stone-100 hover:text-stone-900"
-                            >
-                                <FaMapMarkerAlt />
-                                Addresses
-                            </button>
-                            <button
-    onClick={() => navigate("/addproduct")}
-    className="flex w-full items-center gap-3 rounded-xl p-4 text-left font-medium text-stone-700 transition hover:bg-blue-50 hover:text-blue-700"
->
-    <FaPlus />
-    Add Product
-</button>
-
-                            <button
-                                onClick={handleLogout}
-                                className="flex w-full items-center gap-3 rounded-xl border border-stone-200 p-4 text-left font-medium text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                            >
-                                <FaSignOutAlt />
-                                Logout
-                            </button>
+                            <QuickAction
+                                icon={<FaPlus />}
+                                label="Add Product"
+                                onClick={() => navigate("/addproduct")}
+                            />
 
                         </div>
 
@@ -375,9 +507,68 @@ const Profile = () => {
 
                 </div>
 
+
+                {/* EDIT MODAL */}
+
+                {editField &&
+
+                    <div
+                        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]"
+                        onClick={() => !saving && setEditField(null)}
+                    >
+
+                        <div
+                            className="bg-white p-6 sm:p-8 rounded-2xl w-full max-w-sm shadow-xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+
+                            <h2 className="font-bold text-lg text-gray-900 mb-1 capitalize">
+                                Update {editField === "dateOfBirth" ? "Date of Birth" : editField === "phoneNumber" ? "Phone Number" : editField}
+                            </h2>
+                            <p className="text-sm text-gray-400 mb-5">
+                                This will be saved to your profile.
+                            </p>
+
+                            <input
+                                autoFocus
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none p-3 rounded-xl w-full transition-all"
+                            />
+
+                            <div className="flex gap-3 mt-6">
+
+                                <button
+                                    onClick={() => setEditField(null)}
+                                    disabled={saving}
+                                    className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    onClick={handleUpdate}
+                                    disabled={saving}
+                                    className="flex-1 bg-[#1C1917] hover:bg-black text-white px-5 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                                >
+                                    {saving && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                                    {saving ? "Saving…" : "Save"}
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                }
+
             </div>
+
         </div>
+
     );
+
 };
 
 export default Profile;

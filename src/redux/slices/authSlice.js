@@ -4,6 +4,7 @@ import {
 }
 from "@reduxjs/toolkit";
 
+
 import {
     loginWithEmail,
     loginWithPhone,
@@ -14,12 +15,18 @@ import {
 }
 from "../../api/authApi";
 
+
+
+/* ==============================
+   REGISTER USER
+================================= */
+
 export const register =
 createAsyncThunk(
 
     "auth/register",
 
-    async(formData,thunkAPI)=>{
+    async(formData, thunkAPI)=>{
 
         try{
 
@@ -28,49 +35,65 @@ createAsyncThunk(
 
             return response.data.data;
 
-        }catch(error){
+        }
+        catch(error){
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
+
+
+
+/* ==============================
+   LOGIN EMAIL
+================================= */
 
 export const loginEmail =
 createAsyncThunk(
 
     "auth/loginEmail",
 
-    async(data,thunkAPI)=>{
+    async(data, thunkAPI)=>{
 
         try{
 
             const response =
             await loginWithEmail(data);
 
+
             localStorage.setItem(
                 "accessToken",
                 response.data.data.accessToken
             );
 
+
             return response.data.data;
 
-        }catch(error){
+        }
+        catch(error){
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
+
+
+
+/* ==============================
+   LOGIN PHONE
+================================= */
 
 export const loginPhone =
 createAsyncThunk(
 
     "auth/loginPhone",
 
-    async(data,thunkAPI)=>{
+    async(data, thunkAPI)=>{
 
         try{
 
@@ -79,176 +102,358 @@ createAsyncThunk(
 
             return response.data.data;
 
-        }catch(error){
+        }
+        catch(error){
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
+
+
+
+/* ==============================
+   VERIFY OTP LOGIN
+================================= */
 
 export const verifyOTP =
 createAsyncThunk(
 
     "auth/verifyOTP",
 
-    async(data,thunkAPI)=>{
+    async(data, thunkAPI)=>{
 
         try{
 
+
             const response =
             await verifyOtp(data);
+
+
 
             localStorage.setItem(
                 "accessToken",
                 response.data.data.accessToken
             );
 
+
             return response.data.data;
 
-        }catch(error){
+        }
+        catch(error){
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
+
+
+
+
+/* ==============================
+   GET LOGGED USER
+================================= */
 
 export const fetchCurrentUser =
 createAsyncThunk(
 
     "auth/fetchCurrentUser",
 
-    async(_,thunkAPI)=>{
+    async(_, thunkAPI)=>{
 
         try{
 
             const response =
             await getCurrentUser();
 
+
             return response.data.data;
 
-        }catch(error){
+        }
+        catch(error){
+
+
+            localStorage.removeItem(
+                "accessToken"
+            );
+
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
+
+
+
+
+
+/* ==============================
+   LOGOUT
+================================= */
 
 export const logout =
 createAsyncThunk(
 
     "auth/logout",
 
-    async(_,thunkAPI)=>{
+    async(_, thunkAPI)=>{
 
         try{
 
             await logoutUser();
 
+
             localStorage.removeItem(
                 "accessToken"
             );
 
-        }catch(error){
+        }
+        catch(error){
+
+            localStorage.removeItem(
+                "accessToken"
+            );
+
 
             return thunkAPI.rejectWithValue(
-                error.response.data.message
+                error.response?.data?.message
             );
         }
     }
 );
 
-const authSlice = createSlice({
 
-    name:"auth",
 
-    initialState:{
 
-        user:null,
 
-        loading:false,
+/* ==============================
+   INITIAL STATE
+================================= */
 
-        error:null,
 
-        isAuthenticated:false
-    },
+const initialState = {
 
-    reducers:{},
 
-    extraReducers:(builder)=>{
+    user:null,
 
-        builder
 
-        .addCase(register.pending,
-            (state)=>{
+    loading:false,
 
-            state.loading = true;
-        })
 
-        .addCase(register.fulfilled,
-            (state)=>{
+    error:null,
 
-            state.loading = false;
-        })
 
-        .addCase(register.rejected,
-            (state,action)=>{
+    isAuthenticated:
+    !!localStorage.getItem(
+        "accessToken"
+    )
+};
 
-            state.loading = false;
 
-            state.error = action.payload;
-        })
 
-        .addCase(loginEmail.fulfilled,
-            (state,action)=>{
 
-            state.user =
-            action.payload.user;
 
-            state.isAuthenticated =
-            true;
-        })
 
-        .addCase(loginPhone.fulfilled,
-            (state)=>{
+const authSlice =
+createSlice({
 
-            state.loading = false;
-        })
 
-        .addCase(verifyOTP.fulfilled,
-            (state,action)=>{
+name:"auth",
 
-            state.user =
-            action.payload.user;
 
-            state.isAuthenticated =
-            true;
-        })
+initialState,
 
-        .addCase(fetchCurrentUser.fulfilled,
-            (state,action)=>{
 
-            state.user =
-            action.payload;
+reducers:{},
 
-            state.isAuthenticated =
-            true;
-        })
 
-        .addCase(logout.fulfilled,
-            (state)=>{
 
-            state.user = null;
+extraReducers:(builder)=>{
 
-            state.isAuthenticated =
-            false;
-        });
-    }
+
+builder
+
+
+
+/* REGISTER */
+
+.addCase(
+register.pending,
+
+(state)=>{
+
+    state.loading = true;
+
+})
+
+
+
+.addCase(
+register.fulfilled,
+
+(state)=>{
+
+    state.loading = false;
+
+})
+
+
+
+.addCase(
+register.rejected,
+
+(state,action)=>{
+
+    state.loading=false;
+
+    state.error =
+    action.payload;
+
+})
+
+
+
+
+
+/* EMAIL LOGIN */
+
+.addCase(
+loginEmail.fulfilled,
+
+(state,action)=>{
+
+
+    state.loading=false;
+
+
+    state.user =
+    action.payload.user;
+
+
+    state.isAuthenticated =
+    true;
+
+})
+
+
+
+
+
+
+/* PHONE OTP REQUEST */
+
+.addCase(
+loginPhone.fulfilled,
+
+(state)=>{
+
+
+    state.loading=false;
+
+
+})
+
+
+
+
+
+
+/* OTP VERIFY LOGIN */
+
+.addCase(
+verifyOTP.fulfilled,
+
+(state,action)=>{
+
+
+    state.user =
+    action.payload.user;
+
+
+
+    state.isAuthenticated =
+    true;
+
+
+})
+
+
+
+
+
+
+
+/* REFRESH USER */
+
+
+.addCase(
+fetchCurrentUser.fulfilled,
+
+(state,action)=>{
+
+
+    state.user =
+    action.payload;
+
+
+
+    state.isAuthenticated =
+    true;
+
+
+})
+
+
+
+.addCase(
+fetchCurrentUser.rejected,
+
+(state)=>{
+
+
+    state.user=null;
+
+
+    state.isAuthenticated=false;
+
+
+})
+
+
+
+
+
+
+
+/* LOGOUT */
+
+
+.addCase(
+logout.fulfilled,
+
+(state)=>{
+
+
+    state.user=null;
+
+
+    state.isAuthenticated=false;
+
+
 });
+
+
+
+}
+
+});
+
+
 
 export default authSlice.reducer;
