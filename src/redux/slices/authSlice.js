@@ -64,9 +64,27 @@ createAsyncThunk(
             await loginWithEmail(data);
 
 
+            console.log(
+                "DEPLOY LOGIN RESPONSE:",
+                response.data
+            );
+
+
+            console.log(
+                "TOKEN:",
+                response.data.data.accessToken
+            );
+
+
             localStorage.setItem(
                 "accessToken",
                 response.data.data.accessToken
+            );
+
+
+            console.log(
+                "STORED TOKEN:",
+                localStorage.getItem("accessToken")
             );
 
 
@@ -75,13 +93,17 @@ createAsyncThunk(
         }
         catch(error){
 
+            console.log(
+                "LOGIN ERROR:",
+                error
+            );
+
             return thunkAPI.rejectWithValue(
                 error.response?.data?.message
             );
         }
     }
 );
-
 
 
 /* ==============================
